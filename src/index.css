@@ -1,0 +1,432 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --charbon: #171a2e;
+    --ivoire: #f1ece0;
+    --bronze: #3a4680;
+    --dore: #c8b88a;
+    --pierre: #5e6480;
+    --blanc: #ffffff;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--bronze) var(--ivoire);
+    scrollbar-width: thin;
+  }
+
+  html::-webkit-scrollbar {
+    width: 11px;
+  }
+
+  html::-webkit-scrollbar-track {
+    background: var(--ivoire);
+  }
+
+  html::-webkit-scrollbar-thumb {
+    border: 3px solid var(--ivoire);
+    border-radius: 999px;
+    background: var(--bronze);
+  }
+
+  html::-webkit-scrollbar-thumb:hover {
+    background: var(--dore);
+  }
+
+  body {
+    @apply bg-ivoire text-charbon font-sans antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Lenis */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: var(--bronze);
+    color: var(--blanc);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--bronze);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* the custom cursor replaces the native one on fine pointers only */
+  @media (hover: hover) and (pointer: fine) {
+    body.has-cursor,
+    body.has-cursor * {
+      cursor: none;
+    }
+  }
+}
+
+@layer components {
+  /* micro-label used above every section — mono, uppercase, tracked out */
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.22em] text-pierre;
+  }
+
+  .hairline {
+    @apply h-px w-full bg-charbon/10;
+  }
+
+  /* the ivory/charcoal "paper" grain that sits over the whole page */
+  .grain::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.16;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /*
+   * PIED DE PAGE — inversion clair → sombre.
+   *
+   * `--ink` (0 → 1) est écrit par le composant au fil du scroll. Toutes les
+   * couleurs en sont dérivées par `color-mix`, donc une seule valeur anime
+   * l'ensemble du bloc. On ne demande jamais à GSAP d'interpoler une couleur
+   * dans une custom property : il en est incapable, c'est ce qui cassait la
+   * bascule auparavant.
+   */
+  .footer-invert {
+    --ink: 0;
+    --f-fg: color-mix(in srgb, var(--ivoire) calc(var(--ink) * 100%), var(--charbon));
+    --f-accent: color-mix(in srgb, var(--dore) calc(var(--ink) * 100%), var(--bronze));
+    --f-muted: color-mix(in srgb, var(--f-fg) 62%, transparent);
+    --f-faint: color-mix(in srgb, var(--f-fg) 38%, transparent);
+    --f-line: color-mix(in srgb, var(--f-fg) 14%, transparent);
+    color: var(--f-fg);
+  }
+
+  /*
+   * CADRE STICKY PLEIN ÉCRAN.
+   *
+   * `100vh` d'abord, `100svh` ensuite : sur mobile la barre d'URL qui se
+   * rétracte fait varier `vh` en cours de défilement, et le panneau sticky
+   * sautait à chaque changement. L'unité « small viewport » ne bouge pas.
+   *
+   * Deux déclarations dans la MÊME règle plutôt que deux classes Tailwind :
+   * `.h-[100svh]` est émis avant `.h-screen` dans la feuille, donc le repli
+   * l'aurait emporté sur le correctif. Ici l'ordre est garanti, et les
+   * navigateurs sans `svh` ignorent simplement la seconde ligne.
+   */
+  .h-stage {
+    height: 100vh;
+    height: 100svh;
+  }
+
+  /*
+   * CARTES « VALEURS » — l'encre se réchauffe au fil du scroll.
+   *
+   * `--card-ink` (0 → 1) est écrit par le composant pendant la traversée de
+   * chaque carte. Comme pour le pied de page, GSAP n'interpole JAMAIS une
+   * couleur : il ne fait varier qu'un nombre, et `color-mix` en dérive les
+   * teintes. C'est aussi ce qui laisse les états `:hover` reprendre la main —
+   * ils réassignent `color`, qui l'emporte sur la valeur héritée.
+   */
+  .card-ink {
+    --card-ink: 0;
+    --ci-title: color-mix(in srgb, var(--dore) calc(var(--card-ink) * 100%), var(--ivoire));
+    --ci-index: color-mix(in srgb, var(--bronze) calc(var(--card-ink) * 100%), var(--dore));
+  }
+
+  .card-ink-title {
+    color: var(--ci-title);
+  }
+
+  .card-ink-index {
+    color: var(--ci-index);
+  }
+
+  @keyframes footer-accent-cycle {
+    0%,
+    100% {
+      color: var(--bronze);
+    }
+    50% {
+      color: var(--dore);
+    }
+  }
+
+  .footer-accent-cycle {
+    animation: footer-accent-cycle 5s ease-in-out infinite;
+  }
+
+  /*
+   * GRAVURES SUR LE CIEL — bascule des bruns vers le bleu nuit.
+   *
+   * Les illustrations sont des gravures sépia : mesurées à #5D4A39 dans les
+   * demi-teintes, elles juraient contre le bleu une fois la palette changée.
+   * Les fichiers sont figés, la correction se fait donc à l'affichage.
+   *
+   * Une simple `hue-rotate` ne suffit PAS : mesurée sur les pixels rendus,
+   * elle laissait la dominante rouge devant la bleue (écart B−R de −27) et
+   * bloquait les tons dans l'olive au lieu de les amener au bleu. On repart
+   * donc du gris — `grayscale` efface la teinte d'origine — puis `sepia` pose
+   * une teinte unique et connue, que `hue-rotate` amène sur le bleu. Le
+   * résultat ne dépend plus de la couleur de départ : gravure à la plume ou
+   * portrait en similigravure, les deux atterrissent au même endroit
+   * (écart B−R de +26 à +28, sans dominante verte).
+   *
+   * `saturate` final : assez pour que le bleu se lise, assez peu pour que le
+   * dessin reste une gravure et non une image virée au bleu de méthylène.
+   */
+  .engrave-cool {
+    filter: grayscale(0.7) sepia(0.25) hue-rotate(185deg) saturate(1.6);
+  }
+
+  /* each letter/word wrapper produced by splitText() */
+  .split-line {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+  }
+  .split-inner {
+    display: block;
+    will-change: transform;
+  }
+
+  /*
+    Anti-flash : un bloc [data-reveal] est masqué tant que GSAP n'a pas pris
+    la main (`initReveals` retire l'attribut une fois le ScrollTrigger posé).
+    Sans ça, le texte s'affiche une frame en clair avant de sauter en place.
+  */
+  [data-reveal-pending="true"] {
+    visibility: hidden;
+  }
+
+  /* ---- Titres tapés à la machine (typed.js) ---------------------------- */
+  /*
+    Le « fantôme » occupe la place du titre complet dès le départ : la mise en
+    page ne bouge donc pas d'un pixel pendant la frappe. Il reste dans le flux
+    (et lisible par les lecteurs d'écran) mais transparent ; le texte visible
+    est écrit par typed.js dans .typed-live, superposé par-dessus.
+  */
+  /*
+    Le titre garde sa boîte pendant la frappe SANS superposition : le fantôme
+    est réduit à une hauteur nulle (il ne sert qu'à réserver la largeur des
+    retours à la ligne), et le texte tapé reste dans le flux normal — c'est
+    indispensable car typed.js insère son curseur en SIBLING du texte : dans
+    une boîte en `position: absolute`, il dérivait en bout de ligne.
+  */
+  .typed-slot {
+    display: block;
+  }
+
+  .typed-ghost {
+    display: block;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .typed-live {
+    display: inline;
+  }
+
+  /* frappe terminée : le curseur clignotant disparaît */
+  .typed-slot[data-typed-state="done"] .typed-cursor {
+    display: none;
+  }
+
+  .typed-cursor {
+    font-weight: 300;
+    opacity: 1;
+    animation: typed-blink 1s infinite;
+  }
+
+  @keyframes typed-blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+}
+
+/*
+ * « nova. » du Hero — une couleur par lettre, dans la palette du ciel
+ * cosmique, avec un halo qui la fait briller sur la nuit.
+ */
+.hero-mark {
+  color: #ffffff;
+  text-shadow: 0 0 40px rgba(180, 156, 255, 0.45), 0 0 90px rgba(255, 111, 181, 0.3);
+}
+.hero-mark .char:nth-child(1) { color: #7cf3e3; }
+.hero-mark .char:nth-child(2) { color: #b49cff; }
+.hero-mark .char:nth-child(3) { color: #ff6fb5; }
+.hero-mark .char:nth-child(4) { color: #ffd166; }
+.hero-mark .char:nth-child(5) { color: #ffffff; }
+
+/* Boussole étoilée — voir sections/Compass.jsx */
+.star-compass {
+  --sc-size: clamp(240px, 64vw, 320px);
+  /* tons un cran plus soutenus que l'original : posés sur l'ivoire du site,
+     les ors pâles d'origine s'y fondaient */
+  --sc-light: #e2bd62; /* facette éclairée */
+  --sc-dark: #9a7228; /* facette ombrée */
+  --sc-ring: currentColor;
+  --sc-star: #c9a24a; /* étoiles qui scintillent */
+  width: var(--sc-size);
+  aspect-ratio: 1;
+  color: var(--sc-ring);
+}
+/* variante nuit : les ors pâles d'origine, pensés pour un fond sombre */
+.star-compass--night {
+  --sc-light: #f3d58a;
+  --sc-dark: #b08632;
+  --sc-star: #f7e7b4;
+}
+.star-compass svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.star-compass .sc-twinkle {
+  animation: sc-twinkle 2.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes sc-twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star-compass .sc-twinkle { animation: none; opacity: 0.7; }
+}
+
+/* Étoile qui scintille — couche d'étoiles de Values */
+.twinkle-star {
+  animation: sc-twinkle var(--tw, 3s) ease-in-out infinite;
+  animation-delay: var(--tw-delay, 0s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .twinkle-star { animation: none; opacity: 0.75; }
+}
+
+/*
+ * Visuels de Takeover : on garde la couleur des images (plus de virage au
+ * bleu) et on les détache de la nuit par un halo coloré propre à chacune.
+ */
+.takeover-art {
+  /* `--art-map` : un gradient map de ColorFilters.jsx qui colore l'image elle-même */
+  filter: var(--art-map, none) drop-shadow(0 0 28px var(--art-glow, rgba(124, 243, 227, 0.28)));
+}
+
+/* Services — lune en orbite autour de chaque planète */
+.orbit-moon {
+  animation: orbit-moon var(--orbit, 16s) linear infinite;
+}
+@keyframes orbit-moon {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-moon { animation: none; }
+}
+
+/* Témoignages — anneaux de signal autour de l'étoile active */
+.signal-ring {
+  animation: signal-ring 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes signal-ring {
+  from { transform: scale(0.5); opacity: 0.85; }
+  to { transform: scale(2.6); opacity: 0; }
+}
+
+/* Témoignages — onde du récepteur qui défile */
+.wave-scroll {
+  animation: wave-scroll 1.8s linear infinite;
+}
+@keyframes wave-scroll {
+  to { transform: translateX(-50%); }
+}
+
+/* Témoignages — anneau de progression de la rotation automatique */
+.transmit-progress {
+  animation: transmit-progress var(--dur, 8s) linear forwards;
+}
+@keyframes transmit-progress {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-ring, .wave-scroll { animation: none; }
+  .signal-ring { opacity: 0; }
+}
+
+/* Pied de page — étoile filante qui traverse le ciel de temps en temps */
+.footer-comet {
+  animation: footer-comet 9s linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes footer-comet {
+  0% { transform: translate3d(-20vw, 0, 0) rotate(var(--angle, 16deg)); opacity: 0; }
+  2% { opacity: 1; }
+  12% { transform: translate3d(120vw, 34vw, 0) rotate(var(--angle, 16deg)); opacity: 0; }
+  100% { transform: translate3d(120vw, 34vw, 0) rotate(var(--angle, 16deg)); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer-comet { animation: none; opacity: 0; }
+}
+
+/*
+ * MOBILE — filet de sécurité contre le défilement horizontal.
+ * `clip` et non `hidden` : `hidden` ferait de <body> un conteneur de
+ * défilement et casserait les éléments `sticky` et les épinglages.
+ * Limité aux écrans < 768 px : la version bureau n'est pas touchée.
+ */
+@media (max-width: 767px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+}
+
+@layer utilities {
+  .edge {
+    @apply mx-auto w-full max-w-[1440px] px-5 md:px-10 xl:px-16;
+  }
+
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-repeat: no-repeat;
+    background-position: left bottom;
+    transition: background-size 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .link-underline:hover {
+    background-size: 100% 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
